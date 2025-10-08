@@ -1,31 +1,28 @@
 import { publicProcedure } from '../../../create-context';
 import { z } from 'zod';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StoredOrganization } from '@/types/database';
 
-const USERS_KEY = 'all_users';
-
-interface StoredUser {
-  id: string;
-  businessId: string;
-  username: string;
-  password: string;
-  name: string;
-  businessName: string;
-  createdAt: string;
-}
+const ORGANIZATIONS_KEY = 'organizations';
 
 export default publicProcedure
   .input(
     z.object({
+      organizationId: z.string(),
       username: z.string(),
       password: z.string(),
     })
   )
   .mutation(async ({ input }) => {
-    const usersJson = await AsyncStorage.getItem(USERS_KEY);
-    const users: StoredUser[] = usersJson ? JSON.parse(usersJson) : [];
+    const orgsJson = await AsyncStorage.getItem(ORGANIZATIONS_KEY);
+    const organizations: StoredOrganization[] = orgsJson ? JSON.parse(orgsJson) : [];
 
-    const user = users.find(
+    const organization = organizations.find(org => org.id === input.organizationId);
+    if (!organization) {
+      throw new Error('ארגון לא נמצא');
+    }
+
+    const user = organization.users.find(
       (u) => u.username === input.username && u.password === input.password
     );
 
@@ -35,11 +32,11 @@ export default publicProcedure
 
     return {
       id: user.id,
-      businessId: user.businessId,
+      organizationId: user.organizationId,
       username: user.username,
       name: user.name,
-      businessName: user.businessName,
+      role: user.role,
       createdAt: user.createdAt,
-      token: user.id,
+      token: `${input.organizationId}:${user.id}`,
     };
   });

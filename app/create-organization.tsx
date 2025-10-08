@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -12,34 +12,27 @@ import {
   ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { UserPlus } from 'lucide-react-native';
+import { Building2 } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 
 I18nManager.allowRTL(true);
 I18nManager.forceRTL(true);
 
-export default function RegisterScreen() {
-  const params = useLocalSearchParams<{ organizationId?: string }>();
-  const [organizationId, setOrganizationId] = useState('');
+export default function CreateOrganizationScreen() {
+  const [organizationName, setOrganizationName] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { register } = useAuth();
+  const { createOrganization } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  useEffect(() => {
-    if (params.organizationId) {
-      setOrganizationId(params.organizationId);
-    }
-  }, [params.organizationId]);
-
-  const handleRegister = async () => {
-    if (!organizationId || !username || !password || !confirmPassword || !name) {
+  const handleCreate = async () => {
+    if (!organizationName || !username || !password || !confirmPassword || !name) {
       Alert.alert('שגיאה', 'אנא מלא את כל השדות');
       return;
     }
@@ -60,13 +53,13 @@ export default function RegisterScreen() {
     }
 
     setIsLoading(true);
-    const result = await register(organizationId, username, password, name);
+    const result = await createOrganization(organizationName, username, password, name);
     setIsLoading(false);
 
     if (result.success) {
       router.replace('/(tabs)');
     } else {
-      Alert.alert('שגיאה', result.error || 'שגיאה ברישום');
+      Alert.alert('שגיאה', result.error || 'שגיאה ביצירת ארגון');
     }
   };
 
@@ -88,26 +81,26 @@ export default function RegisterScreen() {
         >
           <View style={styles.header}>
             <View style={styles.iconContainer}>
-              <UserPlus size={48} color="#FFFFFF" />
+              <Building2 size={48} color="#FFFFFF" />
             </View>
-            <Text style={styles.title}>הרשמה לארגון</Text>
-            <Text style={styles.subtitle}>צור משתמש חדש בארגון</Text>
+            <Text style={styles.title}>יצירת ארגון חדש</Text>
+            <Text style={styles.subtitle}>צור ארגון חדש ומשתמש ראשון</Text>
           </View>
 
           <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>קוד ארגון</Text>
+              <Text style={styles.label}>שם הארגון</Text>
               <TextInput
                 style={styles.input}
-                value={organizationId}
-                onChangeText={setOrganizationId}
-                placeholder="הכנס קוד ארגון"
+                value={organizationName}
+                onChangeText={setOrganizationName}
+                placeholder="הכנס שם ארגון"
                 placeholderTextColor="#9CA3AF"
-                autoCapitalize="none"
                 textAlign="right"
-                editable={!params.organizationId}
               />
             </View>
+
+            <View style={styles.divider} />
 
             <View style={styles.inputContainer}>
               <Text style={styles.label}>שם מלא</Text>
@@ -162,25 +155,19 @@ export default function RegisterScreen() {
 
             <TouchableOpacity
               style={[styles.button, isLoading && styles.buttonDisabled]}
-              onPress={handleRegister}
+              onPress={handleCreate}
               disabled={isLoading}
             >
               <Text style={styles.buttonText}>
-                {isLoading ? 'נרשם...' : 'הירשם'}
+                {isLoading ? 'יוצר ארגון...' : 'צור ארגון'}
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.linkButton}
-              onPress={() => {
-                if (organizationId) {
-                  router.push({ pathname: '/login', params: { organizationId } });
-                } else {
-                  router.back();
-                }
-              }}
+              onPress={() => router.back()}
             >
-              <Text style={styles.linkText}>כבר יש לך חשבון? התחבר</Text>
+              <Text style={styles.linkText}>חזור למסך הבחירה</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -228,6 +215,11 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: 16,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    marginVertical: 8,
   },
   inputContainer: {
     gap: 8,

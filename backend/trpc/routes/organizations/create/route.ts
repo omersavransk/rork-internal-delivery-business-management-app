@@ -8,7 +8,7 @@ const ORGANIZATIONS_KEY = 'organizations';
 export default publicProcedure
   .input(
     z.object({
-      organizationId: z.string(),
+      organizationName: z.string().min(2),
       username: z.string().min(3),
       password: z.string().min(6),
       name: z.string().min(2),
@@ -18,39 +18,49 @@ export default publicProcedure
     const orgsJson = await AsyncStorage.getItem(ORGANIZATIONS_KEY);
     const organizations: StoredOrganization[] = orgsJson ? JSON.parse(orgsJson) : [];
 
-    const orgIndex = organizations.findIndex(org => org.id === input.organizationId);
-    if (orgIndex === -1) {
-      throw new Error('ארגון לא נמצא');
-    }
-
     const allUsers = organizations.flatMap(org => org.users);
     const existingUser = allUsers.find((u) => u.username === input.username);
     if (existingUser) {
       throw new Error('שם המשתמש כבר קיים במערכת');
     }
 
+    const organizationId = `org_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     const newUser: StoredUser = {
       id: userId,
-      organizationId: input.organizationId,
+      organizationId,
       username: input.username,
       password: input.password,
       name: input.name,
-      role: 'member',
+      role: 'owner',
       createdAt: new Date().toISOString(),
     };
 
-    organizations[orgIndex].users.push(newUser);
+    const newOrganization: StoredOrganization = {
+      id: organizationId,
+      name: input.organizationName,
+      createdAt: new Date().toISOString(),
+      users: [newUser],
+    };
+
+    organizations.push(newOrganization);
     await AsyncStorage.setItem(ORGANIZATIONS_KEY, JSON.stringify(organizations));
 
     return {
-      id: userId,
-      organizationId: input.organizationId,
-      username: input.username,
-      name: input.name,
-      role: 'member' as const,
-      createdAt: newUser.createdAt,
-      token: `${input.organizationId}:${userId}`,
+      organization: {
+        id: organizationId,
+        name: input.organizationName,
+        createdAt: newOrganization.createdAt,
+      },
+      user: {
+        id: userId,
+        organizationId,
+        username: input.username,
+        name: input.name,
+        role: 'owner' as const,
+        createdAt: newUser.createdAt,
+        token: `${organizationId}:${userId}`,
+      },
     };
   });

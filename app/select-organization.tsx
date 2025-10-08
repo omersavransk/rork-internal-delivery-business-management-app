@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -7,49 +7,29 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   I18nManager,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { LogIn } from 'lucide-react-native';
-import { useAuth } from '@/contexts/AuthContext';
+import { Building2, ArrowRight } from 'lucide-react-native';
 
 I18nManager.allowRTL(true);
 I18nManager.forceRTL(true);
 
-export default function LoginScreen() {
-  const params = useLocalSearchParams<{ organizationId?: string }>();
+export default function SelectOrganizationScreen() {
   const [organizationId, setOrganizationId] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  useEffect(() => {
-    if (params.organizationId) {
-      setOrganizationId(params.organizationId);
-    }
-  }, [params.organizationId]);
-
-  const handleLogin = async () => {
-    if (!organizationId || !username || !password) {
-      Alert.alert('שגיאה', 'אנא מלא את כל השדות');
+  const handleContinue = () => {
+    if (!organizationId.trim()) {
       return;
     }
-
-    setIsLoading(true);
-    const result = await login(organizationId, username, password);
-    setIsLoading(false);
-
-    if (result.success) {
-      router.replace('/(tabs)');
-    } else {
-      Alert.alert('שגיאה', result.error || 'שם משתמש או סיסמה שגויים');
-    }
+    router.push({
+      pathname: '/login',
+      params: { organizationId: organizationId.trim() },
+    });
   };
 
   return (
@@ -64,10 +44,10 @@ export default function LoginScreen() {
         <View style={[styles.content, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
           <View style={styles.header}>
             <View style={styles.iconContainer}>
-              <LogIn size={48} color="#FFFFFF" />
+              <Building2 size={48} color="#FFFFFF" />
             </View>
             <Text style={styles.title}>ניהול חברת הפצה</Text>
-            <Text style={styles.subtitle}>התחבר כדי להמשיך</Text>
+            <Text style={styles.subtitle}>בחר ארגון להתחברות</Text>
           </View>
 
           <View style={styles.form}>
@@ -81,51 +61,29 @@ export default function LoginScreen() {
                 placeholderTextColor="#9CA3AF"
                 autoCapitalize="none"
                 textAlign="right"
-                editable={!params.organizationId}
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>שם משתמש</Text>
-              <TextInput
-                style={styles.input}
-                value={username}
-                onChangeText={setUsername}
-                placeholder="הכנס שם משתמש"
-                placeholderTextColor="#9CA3AF"
-                autoCapitalize="none"
-                textAlign="right"
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>סיסמה</Text>
-              <TextInput
-                style={styles.input}
-                value={password}
-                onChangeText={setPassword}
-                placeholder="הכנס סיסמה"
-                placeholderTextColor="#9CA3AF"
-                secureTextEntry
-                textAlign="right"
               />
             </View>
 
             <TouchableOpacity
-              style={[styles.button, isLoading && styles.buttonDisabled]}
-              onPress={handleLogin}
-              disabled={isLoading}
+              style={[styles.button, !organizationId.trim() && styles.buttonDisabled]}
+              onPress={handleContinue}
+              disabled={!organizationId.trim()}
             >
-              <Text style={styles.buttonText}>
-                {isLoading ? 'מתחבר...' : 'התחבר'}
-              </Text>
+              <Text style={styles.buttonText}>המשך</Text>
+              <ArrowRight size={20} color="#2563EB" />
             </TouchableOpacity>
 
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>או</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
             <TouchableOpacity
-              style={styles.linkButton}
-              onPress={() => router.push('/select-organization')}
+              style={styles.secondaryButton}
+              onPress={() => router.push('/create-organization')}
             >
-              <Text style={styles.linkText}>חזור למסך הבחירה</Text>
+              <Text style={styles.secondaryButtonText}>צור ארגון חדש</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -195,7 +153,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     paddingVertical: 16,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     marginTop: 8,
   },
   buttonDisabled: {
@@ -206,14 +167,32 @@ const styles = StyleSheet.create({
     fontWeight: '700' as const,
     color: '#2563EB',
   },
-  linkButton: {
-    paddingVertical: 12,
+  divider: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    gap: 12,
+    marginVertical: 8,
   },
-  linkText: {
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  dividerText: {
     fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
+  secondaryButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  secondaryButtonText: {
+    fontSize: 16,
+    fontWeight: '700' as const,
     color: '#FFFFFF',
-    textDecorationLine: 'underline',
   },
 });

@@ -1,26 +1,33 @@
-import { publicProcedure } from '../../../create-context';
+import { protectedProcedure } from '../../../create-context';
 import { z } from 'zod';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StoredOrganization, StoredUser } from '@/types/database';
 
 const ORGANIZATIONS_KEY = 'organizations';
 
-export default publicProcedure
+export default protectedProcedure
   .input(
     z.object({
-      organizationId: z.string(),
       username: z.string().min(3),
       password: z.string().min(6),
       name: z.string().min(2),
+      role: z.enum(['admin', 'member']),
     })
   )
-  .mutation(async ({ input }) => {
+  .mutation(async ({ input, ctx }) => {
+    const [organizationId, currentUserId] = ctx.token!.split(':');
+
     const orgsJson = await AsyncStorage.getItem(ORGANIZATIONS_KEY);
     const organizations: StoredOrganization[] = orgsJson ? JSON.parse(orgsJson) : [];
 
-    const orgIndex = organizations.findIndex(org => org.id === input.organizationId);
+    const orgIndex = organizations.findIndex(org => org.id === organizationId);
     if (orgIndex === -1) {
       throw new Error('ארגון לא נמצא');
+    }
+
+    const currentUser = organizations[orgIndex].users.find(u => u.id === currentUserId);
+    if (!currentUser || (currentUser.role !== 'owner' && currentUser.role !== 'admin')) {
+      throw new Error('אין לך הרשאה להוסיף משתמשים');
     }
 
     const allUsers = organizations.flatMap(org => org.users);
@@ -33,11 +40,11 @@ export default publicProcedure
 
     const newUser: StoredUser = {
       id: userId,
-      organizationId: input.organizationId,
+      organizationId,
       username: input.username,
       password: input.password,
       name: input.name,
-      role: 'member',
+      role: input.role,
       createdAt: new Date().toISOString(),
     };
 
@@ -46,11 +53,10 @@ export default publicProcedure
 
     return {
       id: userId,
-      organizationId: input.organizationId,
+      organizationId,
       username: input.username,
       name: input.name,
-      role: 'member' as const,
+      role: input.role,
       createdAt: newUser.createdAt,
-      token: `${input.organizationId}:${userId}`,
     };
   });

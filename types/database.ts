@@ -1,16 +1,31 @@
+export interface Organization {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
 export interface User {
   id: string;
-  businessId: string;
+  organizationId: string;
   username: string;
+  password?: string;
   name: string;
-  businessName: string;
+  role: 'owner' | 'admin' | 'member';
   createdAt: string;
   token?: string;
 }
 
+export interface StoredOrganization extends Organization {
+  users: StoredUser[];
+}
+
+export interface StoredUser extends Omit<User, 'token'> {
+  password: string;
+}
+
 export interface Income {
   id: string;
-  businessId: string;
+  organizationId: string;
   amount: number;
   description: string;
   date: string;
@@ -20,7 +35,7 @@ export interface Income {
 
 export interface Expense {
   id: string;
-  businessId: string;
+  organizationId: string;
   amount: number;
   description: string;
   date: string;
@@ -30,7 +45,7 @@ export interface Expense {
 
 export interface Courier {
   id: string;
-  businessId: string;
+  organizationId: string;
   name: string;
   phone: string;
   pricePerDelivery: number;
@@ -42,7 +57,7 @@ export interface Courier {
 
 export interface Delivery {
   id: string;
-  businessId: string;
+  organizationId: string;
   courierId: string;
   quantity: number;
   totalAmount: number;
@@ -54,7 +69,7 @@ export interface Delivery {
 
 export interface Payment {
   id: string;
-  businessId: string;
+  organizationId: string;
   courierId: string;
   amount: number;
   date: string;
@@ -67,7 +82,7 @@ export type ActivityType = 'income' | 'expense' | 'delivery' | 'payment' | 'cour
 
 export interface Activity {
   id: string;
-  businessId: string;
+  organizationId: string;
   type: ActivityType;
   description: string;
   amount?: number;

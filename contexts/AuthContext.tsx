@@ -27,9 +27,9 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     }
   };
 
-  const login = useCallback(async (username: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = useCallback(async (organizationId: string, username: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const result = await trpcClient.auth.login.mutate({ username, password });
+      const result = await trpcClient.auth.login.mutate({ organizationId, username, password });
       await AsyncStorage.setItem('auth_token', result.token);
       setUser(result);
       return { success: true };
@@ -40,19 +40,36 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
   }, []);
 
   const register = useCallback(async (
+    organizationId: string,
     username: string,
     password: string,
-    name: string,
-    businessName: string
+    name: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const result = await trpcClient.auth.register.mutate({ username, password, name, businessName });
+      const result = await trpcClient.auth.register.mutate({ organizationId, username, password, name });
       await AsyncStorage.setItem('auth_token', result.token);
       setUser(result);
       return { success: true };
     } catch (error) {
       console.error('Registration failed:', error);
       return { success: false, error: error instanceof Error ? error.message : 'שגיאה ברישום' };
+    }
+  }, []);
+
+  const createOrganization = useCallback(async (
+    organizationName: string,
+    username: string,
+    password: string,
+    name: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const result = await trpcClient.organizations.create.mutate({ organizationName, username, password, name });
+      await AsyncStorage.setItem('auth_token', result.user.token);
+      setUser(result.user);
+      return { success: true };
+    } catch (error) {
+      console.error('Organization creation failed:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'שגיאה ביצירת ארגון' };
     }
   }, []);
 
@@ -66,6 +83,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     isLoading,
     login,
     register,
+    createOrganization,
     logout,
-  }), [user, isLoading, login, register, logout]);
+  }), [user, isLoading, login, register, createOrganization, logout]);
 });

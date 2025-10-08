@@ -16,7 +16,7 @@ export const [DataProvider, useData] = createContextHook(() => {
 
   const loadData = useCallback(async () => {
     try {
-      if (!user?.businessId) {
+      if (!user?.organizationId) {
         setIsLoading(false);
         return;
       }
@@ -31,50 +31,50 @@ export const [DataProvider, useData] = createContextHook(() => {
           AsyncStorage.getItem('activities'),
         ]);
 
-      const businessId = user.businessId;
+      const organizationId = user.organizationId;
 
       if (incomesData) {
         const allIncomes: Income[] = JSON.parse(incomesData);
-        setIncomes(allIncomes.filter((item) => item.businessId === businessId));
+        setIncomes(allIncomes.filter((item) => item.organizationId === organizationId));
       }
       if (expensesData) {
         const allExpenses: Expense[] = JSON.parse(expensesData);
-        setExpenses(allExpenses.filter((item) => item.businessId === businessId));
+        setExpenses(allExpenses.filter((item) => item.organizationId === organizationId));
       }
       if (couriersData) {
         const allCouriers: Courier[] = JSON.parse(couriersData);
-        setCouriers(allCouriers.filter((item) => item.businessId === businessId));
+        setCouriers(allCouriers.filter((item) => item.organizationId === organizationId));
       }
       if (deliveriesData) {
         const allDeliveries: Delivery[] = JSON.parse(deliveriesData);
-        setDeliveries(allDeliveries.filter((item) => item.businessId === businessId));
+        setDeliveries(allDeliveries.filter((item) => item.organizationId === organizationId));
       }
       if (paymentsData) {
         const allPayments: Payment[] = JSON.parse(paymentsData);
-        setPayments(allPayments.filter((item) => item.businessId === businessId));
+        setPayments(allPayments.filter((item) => item.organizationId === organizationId));
       }
       if (activitiesData) {
         const allActivities: Activity[] = JSON.parse(activitiesData);
-        setActivities(allActivities.filter((item) => item.businessId === businessId));
+        setActivities(allActivities.filter((item) => item.organizationId === organizationId));
       }
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [user?.businessId]);
+  }, [user?.organizationId]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  const addIncome = useCallback(async (income: Omit<Income, 'id' | 'createdAt' | 'businessId'>) => {
-    if (!user?.businessId) return;
+  const addIncome = useCallback(async (income: Omit<Income, 'id' | 'createdAt' | 'organizationId'>) => {
+    if (!user?.organizationId) return;
 
     const newIncome: Income = {
       ...income,
       id: Date.now().toString(),
-      businessId: user.businessId,
+      organizationId: user.organizationId,
       createdAt: new Date().toISOString(),
     };
     const updated = [...incomes, newIncome];
@@ -87,7 +87,7 @@ export const [DataProvider, useData] = createContextHook(() => {
 
     const activity: Activity = {
       id: (Date.now() + 1).toString(),
-      businessId: user.businessId,
+      organizationId: user.organizationId,
       type: 'income',
       description: income.description,
       amount: income.amount,
@@ -102,7 +102,7 @@ export const [DataProvider, useData] = createContextHook(() => {
     const allActivities: Activity[] = allActivitiesData ? JSON.parse(allActivitiesData) : [];
     const updatedAllActivities = [...allActivities, activity];
     await AsyncStorage.setItem('activities', JSON.stringify(updatedAllActivities));
-  }, [incomes, activities, user?.businessId]);
+  }, [incomes, activities, user?.organizationId]);
 
   const updateIncome = useCallback(async (id: string, updates: Partial<Income>) => {
     const updated = incomes.map((item) =>
@@ -128,13 +128,13 @@ export const [DataProvider, useData] = createContextHook(() => {
     await AsyncStorage.setItem('incomes', JSON.stringify(updatedAll));
   }, [incomes]);
 
-  const addExpense = useCallback(async (expense: Omit<Expense, 'id' | 'createdAt' | 'businessId'>) => {
-    if (!user?.businessId) return;
+  const addExpense = useCallback(async (expense: Omit<Expense, 'id' | 'createdAt' | 'organizationId'>) => {
+    if (!user?.organizationId) return;
 
     const newExpense: Expense = {
       ...expense,
       id: Date.now().toString(),
-      businessId: user.businessId,
+      organizationId: user.organizationId,
       createdAt: new Date().toISOString(),
     };
     const updated = [...expenses, newExpense];
@@ -147,7 +147,7 @@ export const [DataProvider, useData] = createContextHook(() => {
 
     const activity: Activity = {
       id: (Date.now() + 1).toString(),
-      businessId: user.businessId,
+      organizationId: user.organizationId,
       type: 'expense',
       description: expense.description,
       amount: expense.amount,
@@ -162,7 +162,7 @@ export const [DataProvider, useData] = createContextHook(() => {
     const allActivities: Activity[] = allActivitiesData ? JSON.parse(allActivitiesData) : [];
     const updatedAllActivities = [...allActivities, activity];
     await AsyncStorage.setItem('activities', JSON.stringify(updatedAllActivities));
-  }, [expenses, activities, user?.businessId]);
+  }, [expenses, activities, user?.organizationId]);
 
   const updateExpense = useCallback(async (id: string, updates: Partial<Expense>) => {
     const updated = expenses.map((item) =>
@@ -188,13 +188,13 @@ export const [DataProvider, useData] = createContextHook(() => {
     await AsyncStorage.setItem('expenses', JSON.stringify(updatedAll));
   }, [expenses]);
 
-  const addCourier = useCallback(async (courier: Omit<Courier, 'id' | 'createdAt' | 'balance' | 'businessId'>) => {
-    if (!user?.businessId) return;
+  const addCourier = useCallback(async (courier: Omit<Courier, 'id' | 'createdAt' | 'balance' | 'organizationId'>) => {
+    if (!user?.organizationId) return;
 
     const newCourier: Courier = {
       ...courier,
       id: Date.now().toString(),
-      businessId: user.businessId,
+      organizationId: user.organizationId,
       balance: 0,
       createdAt: new Date().toISOString(),
     };
@@ -208,7 +208,7 @@ export const [DataProvider, useData] = createContextHook(() => {
 
     const activity: Activity = {
       id: (Date.now() + 1).toString(),
-      businessId: user.businessId,
+      organizationId: user.organizationId,
       type: 'courier_added',
       description: `שליח חדש נוסף: ${courier.name}`,
       relatedId: newCourier.id,
@@ -222,7 +222,7 @@ export const [DataProvider, useData] = createContextHook(() => {
     const allActivities: Activity[] = allActivitiesData ? JSON.parse(allActivitiesData) : [];
     const updatedAllActivities = [...allActivities, activity];
     await AsyncStorage.setItem('activities', JSON.stringify(updatedAllActivities));
-  }, [couriers, activities, user?.businessId]);
+  }, [couriers, activities, user?.organizationId]);
 
   const updateCourier = useCallback(async (id: string, updates: Partial<Courier>) => {
     const updated = couriers.map((item) =>
@@ -239,7 +239,7 @@ export const [DataProvider, useData] = createContextHook(() => {
   }, [couriers]);
 
   const deleteCourier = useCallback(async (id: string, deletedBy: string) => {
-    if (!user?.businessId) return;
+    if (!user?.organizationId) return;
 
     const courier = couriers.find((c) => c.id === id);
     const updated = couriers.filter((item) => item.id !== id);
@@ -253,7 +253,7 @@ export const [DataProvider, useData] = createContextHook(() => {
     if (courier) {
       const activity: Activity = {
         id: Date.now().toString(),
-        businessId: user.businessId,
+        organizationId: user.organizationId,
         type: 'courier_deleted',
         description: `שליח נמחק: ${courier.name}`,
         relatedId: id,
@@ -268,15 +268,15 @@ export const [DataProvider, useData] = createContextHook(() => {
       const updatedAllActivities = [...allActivities, activity];
       await AsyncStorage.setItem('activities', JSON.stringify(updatedAllActivities));
     }
-  }, [couriers, activities, user?.businessId]);
+  }, [couriers, activities, user?.organizationId]);
 
-  const addDelivery = useCallback(async (delivery: Omit<Delivery, 'id' | 'createdAt' | 'businessId'>) => {
-    if (!user?.businessId) return;
+  const addDelivery = useCallback(async (delivery: Omit<Delivery, 'id' | 'createdAt' | 'organizationId'>) => {
+    if (!user?.organizationId) return;
 
     const newDelivery: Delivery = {
       ...delivery,
       id: Date.now().toString(),
-      businessId: user.businessId,
+      organizationId: user.organizationId,
       createdAt: new Date().toISOString(),
     };
     const updatedDeliveries = [...deliveries, newDelivery];
@@ -307,7 +307,7 @@ export const [DataProvider, useData] = createContextHook(() => {
     if (courier) {
       const activity: Activity = {
         id: (Date.now() + 1).toString(),
-        businessId: user.businessId,
+        organizationId: user.organizationId,
         type: 'delivery',
         description: `${delivery.quantity} משלוחים לשליח ${courier.name}${delivery.notes ? ` - ${delivery.notes}` : ''}`,
         amount: delivery.totalAmount,
@@ -323,15 +323,15 @@ export const [DataProvider, useData] = createContextHook(() => {
       const updatedAllActivities = [...allActivities, activity];
       await AsyncStorage.setItem('activities', JSON.stringify(updatedAllActivities));
     }
-  }, [deliveries, couriers, activities, user?.businessId]);
+  }, [deliveries, couriers, activities, user?.organizationId]);
 
-  const addPayment = useCallback(async (payment: Omit<Payment, 'id' | 'createdAt' | 'businessId'>) => {
-    if (!user?.businessId) return;
+  const addPayment = useCallback(async (payment: Omit<Payment, 'id' | 'createdAt' | 'organizationId'>) => {
+    if (!user?.organizationId) return;
 
     const newPayment: Payment = {
       ...payment,
       id: Date.now().toString(),
-      businessId: user.businessId,
+      organizationId: user.organizationId,
       createdAt: new Date().toISOString(),
     };
     const updatedPayments = [...payments, newPayment];
@@ -362,7 +362,7 @@ export const [DataProvider, useData] = createContextHook(() => {
     if (courier) {
       const newExpense: Expense = {
         id: (Date.now() + 1).toString(),
-        businessId: user.businessId,
+        organizationId: user.organizationId,
         amount: payment.amount,
         description: `תשלום לשליח ${courier.name}${payment.notes ? ` - ${payment.notes}` : ''}`,
         date: payment.date,
@@ -379,7 +379,7 @@ export const [DataProvider, useData] = createContextHook(() => {
 
       const activity: Activity = {
         id: (Date.now() + 2).toString(),
-        businessId: user.businessId,
+        organizationId: user.organizationId,
         type: 'payment',
         description: `תשלום לשליח ${courier.name}${payment.notes ? ` - ${payment.notes}` : ''}`,
         amount: payment.amount,
@@ -395,7 +395,7 @@ export const [DataProvider, useData] = createContextHook(() => {
       const updatedAllActivities = [...allActivities, activity];
       await AsyncStorage.setItem('activities', JSON.stringify(updatedAllActivities));
     }
-  }, [payments, couriers, expenses, activities, user?.businessId]);
+  }, [payments, couriers, expenses, activities, user?.organizationId]);
 
   return useMemo(() => ({
     incomes,

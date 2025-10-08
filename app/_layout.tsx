@@ -20,16 +20,19 @@ function RootLayoutNav() {
     if (isLoading) return;
 
     const inAuthGroup = segments[0] === '(tabs)' || segments[0] === 'courier';
+    const inAuthScreens = segments[0] === 'login' || segments[0] === 'register' || segments[0] === 'select-organization' || segments[0] === 'create-organization';
 
     if (!user && inAuthGroup) {
-      router.replace('/login');
-    } else if (user && !inAuthGroup) {
+      router.replace('/select-organization');
+    } else if (user && !inAuthGroup && !inAuthScreens) {
       router.replace('/(tabs)');
     }
   }, [user, isLoading, segments, router]);
 
   return (
     <Stack screenOptions={{ headerBackTitle: "חזור" }}>
+      <Stack.Screen name="select-organization" options={{ headerShown: false }} />
+      <Stack.Screen name="create-organization" options={{ headerShown: false }} />
       <Stack.Screen name="login" options={{ headerShown: false }} />
       <Stack.Screen name="register" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
