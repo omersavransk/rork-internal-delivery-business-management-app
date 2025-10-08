@@ -125,12 +125,29 @@ ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE activities ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies (Allow all operations for now - you can restrict later)
+DROP POLICY IF EXISTS "Allow all for organizations" ON organizations;
 CREATE POLICY "Allow all for organizations" ON organizations FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for users" ON users;
 CREATE POLICY "Allow all for users" ON users FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for organization_users" ON organization_users;
 CREATE POLICY "Allow all for organization_users" ON organization_users FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for couriers" ON couriers;
 CREATE POLICY "Allow all for couriers" ON couriers FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for income" ON income;
 CREATE POLICY "Allow all for income" ON income FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for expenses" ON expenses;
 CREATE POLICY "Allow all for expenses" ON expenses FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for deliveries" ON deliveries;
 CREATE POLICY "Allow all for deliveries" ON deliveries FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for payments" ON payments;
 CREATE POLICY "Allow all for payments" ON payments FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Allow all for activities" ON activities;
 CREATE POLICY "Allow all for activities" ON activities FOR ALL USING (true);
