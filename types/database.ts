@@ -1,12 +1,16 @@
 export interface User {
   id: string;
+  businessId: string;
   username: string;
   name: string;
+  businessName: string;
   createdAt: string;
+  token?: string;
 }
 
 export interface Income {
   id: string;
+  businessId: string;
   amount: number;
   description: string;
   date: string;
@@ -16,6 +20,7 @@ export interface Income {
 
 export interface Expense {
   id: string;
+  businessId: string;
   amount: number;
   description: string;
   date: string;
@@ -25,6 +30,7 @@ export interface Expense {
 
 export interface Courier {
   id: string;
+  businessId: string;
   name: string;
   phone: string;
   pricePerDelivery: number;
@@ -36,6 +42,7 @@ export interface Courier {
 
 export interface Delivery {
   id: string;
+  businessId: string;
   courierId: string;
   quantity: number;
   totalAmount: number;
@@ -47,6 +54,7 @@ export interface Delivery {
 
 export interface Payment {
   id: string;
+  businessId: string;
   courierId: string;
   amount: number;
   date: string;
@@ -59,6 +67,7 @@ export type ActivityType = 'income' | 'expense' | 'delivery' | 'payment' | 'cour
 
 export interface Activity {
   id: string;
+  businessId: string;
   type: ActivityType;
   description: string;
   amount?: number;
