@@ -1,7 +1,17 @@
 import { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 
 export const createContext = async (opts: FetchCreateContextFnOptions) => {
   const authHeader = opts.req.headers.get('authorization');
@@ -17,6 +27,8 @@ export const createContext = async (opts: FetchCreateContextFnOptions) => {
       userId = parts[1];
     }
   }
+  
+  console.log('[Context] Created with:', { hasToken: !!token, userId, organizationId });
   
   return {
     req: opts.req,

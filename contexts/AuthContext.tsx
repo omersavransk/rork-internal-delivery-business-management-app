@@ -63,12 +63,17 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     name: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
+      console.log('[AuthContext] Creating organization:', { organizationName, email, name });
       const result = await trpcClient.organizations.create.mutate({ organizationName, email, password, name });
+      console.log('[AuthContext] Organization created successfully:', result);
       await AsyncStorage.setItem('auth_token', result.user.token);
       setUser(result.user);
       return { success: true };
     } catch (error) {
-      console.error('Organization creation failed:', error);
+      console.error('[AuthContext] Organization creation failed:', error);
+      if (error && typeof error === 'object' && 'message' in error) {
+        console.error('[AuthContext] Error message:', error.message);
+      }
       return { success: false, error: error instanceof Error ? error.message : 'שגיאה ביצירת ארגון' };
     }
   }, []);

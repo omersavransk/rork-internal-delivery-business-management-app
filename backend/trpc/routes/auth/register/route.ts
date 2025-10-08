@@ -1,6 +1,6 @@
 import { publicProcedure } from '../../../create-context';
 import { z } from 'zod';
-import bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcryptjs';
 
 export default publicProcedure
   .input(

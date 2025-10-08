@@ -1,6 +1,6 @@
 import { publicProcedure } from '../../../create-context';
 import { z } from 'zod';
-import bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcryptjs';
 
 export default publicProcedure
   .input(
@@ -12,11 +12,15 @@ export default publicProcedure
     })
   )
   .mutation(async ({ input, ctx }) => {
-    const { data: existingUser } = await ctx.supabase
+    console.log('[Create Org] Starting with input:', { organizationName: input.organizationName, email: input.email, name: input.name });
+    
+    const { data: existingUser, error: checkError } = await ctx.supabase
       .from('users')
       .select('id')
       .eq('email', input.email)
       .single();
+
+    console.log('[Create Org] Existing user check:', { existingUser, checkError });
 
     if (existingUser) {
       throw new Error('המייל כבר קיים במערכת');
@@ -30,11 +34,16 @@ export default publicProcedure
       .select()
       .single();
 
+    console.log('[Create Org] Organization created:', { newOrganization, orgError });
+
     if (orgError || !newOrganization) {
-      throw new Error('שגיאה ביצירת ארגון');
+      console.error('[Create Org] Failed to create organization:', orgError);
+      throw new Error('שגיאה ביצירת ארגון: ' + (orgError?.message || 'Unknown error'));
     }
 
+    console.log('[Create Org] Hashing password...');
     const passwordHash = await bcrypt.hash(input.password, 10);
+    console.log('[Create Org] Password hashed successfully');
 
     const { data: newUser, error: userError } = await ctx.supabase
       .from('users')
@@ -46,8 +55,11 @@ export default publicProcedure
       .select()
       .single();
 
+    console.log('[Create Org] User created:', { newUser, userError });
+
     if (userError || !newUser) {
-      throw new Error('שגיאה ביצירת משתמש');
+      console.error('[Create Org] Failed to create user:', userError);
+      throw new Error('שגיאה ביצירת משתמש: ' + (userError?.message || 'Unknown error'));
     }
 
     const { error: orgUserError } = await ctx.supabase
@@ -58,11 +70,14 @@ export default publicProcedure
         role: 'owner',
       });
 
+    console.log('[Create Org] Organization user link:', { orgUserError });
+
     if (orgUserError) {
-      throw new Error('שגיאה בהוספת משתמש לארגון');
+      console.error('[Create Org] Failed to link user to organization:', orgUserError);
+      throw new Error('שגיאה בהוספת משתמש לארגון: ' + (orgUserError?.message || 'Unknown error'));
     }
 
-    return {
+    const result = {
       organization: {
         id: newOrganization.id,
         name: newOrganization.name,
@@ -78,4 +93,7 @@ export default publicProcedure
         token: `${newOrganization.id}:${newUser.id}`,
       },
     };
+    
+    console.log('[Create Org] Success! Returning result');
+    return result;
   });
