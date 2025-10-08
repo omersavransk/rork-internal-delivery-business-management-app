@@ -1,36 +1,48 @@
 import { protectedProcedure } from '../../../create-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { StoredOrganization } from '@/types/database';
-
-const ORGANIZATIONS_KEY = 'organizations';
 
 export default protectedProcedure.query(async ({ ctx }) => {
-  const [organizationId, userId] = ctx.token!.split(':');
+  const { data: user, error: userError } = await ctx.supabase
+    .from('users')
+    .select('*')
+    .eq('id', ctx.userId)
+    .single();
 
-  const orgsJson = await AsyncStorage.getItem(ORGANIZATIONS_KEY);
-  const organizations: StoredOrganization[] = orgsJson ? JSON.parse(orgsJson) : [];
-
-  const organization = organizations.find(org => org.id === organizationId);
-  if (!organization) {
-    throw new Error('ארגון לא נמצא');
+  if (userError || !user) {
+    throw new Error('משתמש לא נמצא');
   }
 
-  const user = organization.users.find((u) => u.id === userId);
-  if (!user) {
-    throw new Error('משתמש לא נמצא');
+  const { data: orgUser, error: orgUserError } = await ctx.supabase
+    .from('organization_users')
+    .select('role')
+    .eq('organization_id', ctx.organizationId)
+    .eq('user_id', ctx.userId)
+    .single();
+
+  if (orgUserError || !orgUser) {
+    throw new Error('משתמש לא שייך לארגון');
+  }
+
+  const { data: organization, error: orgError } = await ctx.supabase
+    .from('organizations')
+    .select('*')
+    .eq('id', ctx.organizationId)
+    .single();
+
+  if (orgError || !organization) {
+    throw new Error('ארגון לא נמצא');
   }
 
   return {
     id: user.id,
-    organizationId: user.organizationId,
-    username: user.username,
+    organizationId: ctx.organizationId,
+    email: user.email,
     name: user.name,
-    role: user.role,
-    createdAt: user.createdAt,
+    role: orgUser.role,
+    createdAt: user.created_at,
     organization: {
       id: organization.id,
       name: organization.name,
-      createdAt: organization.createdAt,
+      createdAt: organization.created_at,
     },
   };
 });

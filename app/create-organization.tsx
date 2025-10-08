@@ -22,7 +22,7 @@ I18nManager.forceRTL(true);
 
 export default function CreateOrganizationScreen() {
   const [organizationName, setOrganizationName] = useState('');
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
@@ -32,7 +32,7 @@ export default function CreateOrganizationScreen() {
   const insets = useSafeAreaInsets();
 
   const handleCreate = async () => {
-    if (!organizationName || !username || !password || !confirmPassword || !name) {
+    if (!organizationName || !email || !password || !confirmPassword || !name) {
       Alert.alert('שגיאה', 'אנא מלא את כל השדות');
       return;
     }
@@ -47,13 +47,8 @@ export default function CreateOrganizationScreen() {
       return;
     }
 
-    if (username.length < 3) {
-      Alert.alert('שגיאה', 'שם המשתמש חייב להכיל לפחות 3 תווים');
-      return;
-    }
-
     setIsLoading(true);
-    const result = await createOrganization(organizationName, username, password, name);
+    const result = await createOrganization(organizationName, email, password, name);
     setIsLoading(false);
 
     if (result.success) {
@@ -115,14 +110,15 @@ export default function CreateOrganizationScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>שם משתמש</Text>
+              <Text style={styles.label}>מייל</Text>
               <TextInput
                 style={styles.input}
-                value={username}
-                onChangeText={setUsername}
-                placeholder="הכנס שם משתמש (לפחות 3 תווים)"
+                value={email}
+                onChangeText={setEmail}
+                placeholder="הכנס מייל"
                 placeholderTextColor="#9CA3AF"
                 autoCapitalize="none"
+                keyboardType="email-address"
                 textAlign="right"
               />
             </View>

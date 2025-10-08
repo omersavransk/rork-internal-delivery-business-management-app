@@ -1,66 +1,81 @@
 import { publicProcedure } from '../../../create-context';
 import { z } from 'zod';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { StoredOrganization, StoredUser } from '@/types/database';
-
-const ORGANIZATIONS_KEY = 'organizations';
+import bcrypt from 'bcryptjs';
 
 export default publicProcedure
   .input(
     z.object({
       organizationName: z.string().min(2),
-      username: z.string().min(3),
+      email: z.string().email(),
       password: z.string().min(6),
       name: z.string().min(2),
     })
   )
-  .mutation(async ({ input }) => {
-    const orgsJson = await AsyncStorage.getItem(ORGANIZATIONS_KEY);
-    const organizations: StoredOrganization[] = orgsJson ? JSON.parse(orgsJson) : [];
+  .mutation(async ({ input, ctx }) => {
+    const { data: existingUser } = await ctx.supabase
+      .from('users')
+      .select('id')
+      .eq('email', input.email)
+      .single();
 
-    const allUsers = organizations.flatMap(org => org.users);
-    const existingUser = allUsers.find((u) => u.username === input.username);
     if (existingUser) {
-      throw new Error('שם המשתמש כבר קיים במערכת');
+      throw new Error('המייל כבר קיים במערכת');
     }
 
-    const organizationId = `org_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const { data: newOrganization, error: orgError } = await ctx.supabase
+      .from('organizations')
+      .insert({
+        name: input.organizationName,
+      })
+      .select()
+      .single();
 
-    const newUser: StoredUser = {
-      id: userId,
-      organizationId,
-      username: input.username,
-      password: input.password,
-      name: input.name,
-      role: 'owner',
-      createdAt: new Date().toISOString(),
-    };
+    if (orgError || !newOrganization) {
+      throw new Error('שגיאה ביצירת ארגון');
+    }
 
-    const newOrganization: StoredOrganization = {
-      id: organizationId,
-      name: input.organizationName,
-      createdAt: new Date().toISOString(),
-      users: [newUser],
-    };
+    const passwordHash = await bcrypt.hash(input.password, 10);
 
-    organizations.push(newOrganization);
-    await AsyncStorage.setItem(ORGANIZATIONS_KEY, JSON.stringify(organizations));
+    const { data: newUser, error: userError } = await ctx.supabase
+      .from('users')
+      .insert({
+        email: input.email,
+        password_hash: passwordHash,
+        name: input.name,
+      })
+      .select()
+      .single();
+
+    if (userError || !newUser) {
+      throw new Error('שגיאה ביצירת משתמש');
+    }
+
+    const { error: orgUserError } = await ctx.supabase
+      .from('organization_users')
+      .insert({
+        organization_id: newOrganization.id,
+        user_id: newUser.id,
+        role: 'owner',
+      });
+
+    if (orgUserError) {
+      throw new Error('שגיאה בהוספת משתמש לארגון');
+    }
 
     return {
       organization: {
-        id: organizationId,
-        name: input.organizationName,
-        createdAt: newOrganization.createdAt,
+        id: newOrganization.id,
+        name: newOrganization.name,
+        createdAt: newOrganization.created_at,
       },
       user: {
-        id: userId,
-        organizationId,
-        username: input.username,
-        name: input.name,
+        id: newUser.id,
+        organizationId: newOrganization.id,
+        email: newUser.email,
+        name: newUser.name,
         role: 'owner' as const,
-        createdAt: newUser.createdAt,
-        token: `${organizationId}:${userId}`,
+        createdAt: newUser.created_at,
+        token: `${newOrganization.id}:${newUser.id}`,
       },
     };
   });

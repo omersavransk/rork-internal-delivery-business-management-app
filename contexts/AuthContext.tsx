@@ -27,9 +27,9 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     }
   };
 
-  const login = useCallback(async (organizationId: string, username: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = useCallback(async (organizationId: string, email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const result = await trpcClient.auth.login.mutate({ organizationId, username, password });
+      const result = await trpcClient.auth.login.mutate({ organizationId, email, password });
       await AsyncStorage.setItem('auth_token', result.token);
       setUser(result);
       return { success: true };
@@ -41,12 +41,12 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
 
   const register = useCallback(async (
     organizationId: string,
-    username: string,
+    email: string,
     password: string,
     name: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const result = await trpcClient.auth.register.mutate({ organizationId, username, password, name });
+      const result = await trpcClient.auth.register.mutate({ organizationId, email, password, name });
       await AsyncStorage.setItem('auth_token', result.token);
       setUser(result);
       return { success: true };
@@ -58,12 +58,12 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
 
   const createOrganization = useCallback(async (
     organizationName: string,
-    username: string,
+    email: string,
     password: string,
     name: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const result = await trpcClient.organizations.create.mutate({ organizationName, username, password, name });
+      const result = await trpcClient.organizations.create.mutate({ organizationName, email, password, name });
       await AsyncStorage.setItem('auth_token', result.user.token);
       setUser(result.user);
       return { success: true };

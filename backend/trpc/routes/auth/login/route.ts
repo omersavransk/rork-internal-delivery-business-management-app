@@ -1,42 +1,49 @@
 import { publicProcedure } from '../../../create-context';
 import { z } from 'zod';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { StoredOrganization } from '@/types/database';
-
-const ORGANIZATIONS_KEY = 'organizations';
+import bcrypt from 'bcryptjs';
 
 export default publicProcedure
   .input(
     z.object({
       organizationId: z.string(),
-      username: z.string(),
+      email: z.string().email(),
       password: z.string(),
     })
   )
-  .mutation(async ({ input }) => {
-    const orgsJson = await AsyncStorage.getItem(ORGANIZATIONS_KEY);
-    const organizations: StoredOrganization[] = orgsJson ? JSON.parse(orgsJson) : [];
+  .mutation(async ({ input, ctx }) => {
+    const { data: user, error: userError } = await ctx.supabase
+      .from('users')
+      .select('*')
+      .eq('email', input.email)
+      .single();
 
-    const organization = organizations.find(org => org.id === input.organizationId);
-    if (!organization) {
-      throw new Error('ארגון לא נמצא');
+    if (userError || !user) {
+      throw new Error('מייל או סיסמה שגויים');
     }
 
-    const user = organization.users.find(
-      (u) => u.username === input.username && u.password === input.password
-    );
+    const passwordMatch = await bcrypt.compare(input.password, user.password_hash);
+    if (!passwordMatch) {
+      throw new Error('מייל או סיסמה שגויים');
+    }
 
-    if (!user) {
-      throw new Error('שם משתמש או סיסמה שגויים');
+    const { data: orgUser, error: orgUserError } = await ctx.supabase
+      .from('organization_users')
+      .select('role')
+      .eq('organization_id', input.organizationId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (orgUserError || !orgUser) {
+      throw new Error('משתמש לא שייך לארגון זה');
     }
 
     return {
       id: user.id,
-      organizationId: user.organizationId,
-      username: user.username,
+      organizationId: input.organizationId,
+      email: user.email,
       name: user.name,
-      role: user.role,
-      createdAt: user.createdAt,
+      role: orgUser.role,
+      createdAt: user.created_at,
       token: `${input.organizationId}:${user.id}`,
     };
   });

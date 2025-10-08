@@ -7,12 +7,12 @@ export interface Organization {
 export interface User {
   id: string;
   organizationId: string;
-  username: string;
-  password?: string;
+  email: string;
   name: string;
   role: 'owner' | 'admin' | 'member';
   createdAt: string;
   token?: string;
+  organization?: Organization;
 }
 
 export interface StoredOrganization extends Organization {

@@ -22,7 +22,7 @@ I18nManager.forceRTL(true);
 export default function LoginScreen() {
   const params = useLocalSearchParams<{ organizationId?: string }>();
   const [organizationId, setOrganizationId] = useState('');
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
@@ -36,13 +36,13 @@ export default function LoginScreen() {
   }, [params.organizationId]);
 
   const handleLogin = async () => {
-    if (!organizationId || !username || !password) {
+    if (!organizationId || !email || !password) {
       Alert.alert('שגיאה', 'אנא מלא את כל השדות');
       return;
     }
 
     setIsLoading(true);
-    const result = await login(organizationId, username, password);
+    const result = await login(organizationId, email, password);
     setIsLoading(false);
 
     if (result.success) {
@@ -86,14 +86,15 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>שם משתמש</Text>
+              <Text style={styles.label}>מייל</Text>
               <TextInput
                 style={styles.input}
-                value={username}
-                onChangeText={setUsername}
-                placeholder="הכנס שם משתמש"
+                value={email}
+                onChangeText={setEmail}
+                placeholder="הכנס מייל"
                 placeholderTextColor="#9CA3AF"
                 autoCapitalize="none"
+                keyboardType="email-address"
                 textAlign="right"
               />
             </View>

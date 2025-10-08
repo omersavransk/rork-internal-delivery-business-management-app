@@ -1,27 +1,36 @@
 import { protectedProcedure } from '../../../create-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { StoredOrganization } from '@/types/database';
-
-const ORGANIZATIONS_KEY = 'organizations';
 
 export default protectedProcedure
   .query(async ({ ctx }) => {
-    const [organizationId] = ctx.token!.split(':');
+    const { data: orgUsers, error: orgUsersError } = await ctx.supabase
+      .from('organization_users')
+      .select('user_id, role')
+      .eq('organization_id', ctx.organizationId);
 
-    const orgsJson = await AsyncStorage.getItem(ORGANIZATIONS_KEY);
-    const organizations: StoredOrganization[] = orgsJson ? JSON.parse(orgsJson) : [];
-
-    const organization = organizations.find(org => org.id === organizationId);
-    if (!organization) {
-      throw new Error('ארגון לא נמצא');
+    if (orgUsersError || !orgUsers) {
+      throw new Error('שגיאה בטעינת משתמשים');
     }
 
-    return organization.users.map(user => ({
-      id: user.id,
-      organizationId: user.organizationId,
-      username: user.username,
-      name: user.name,
-      role: user.role,
-      createdAt: user.createdAt,
-    }));
+    const userIds = orgUsers.map(ou => ou.user_id);
+
+    const { data: users, error: usersError } = await ctx.supabase
+      .from('users')
+      .select('id, email, name, created_at')
+      .in('id', userIds);
+
+    if (usersError || !users) {
+      throw new Error('שגיאה בטעינת משתמשים');
+    }
+
+    return users.map(user => {
+      const orgUser = orgUsers.find(ou => ou.user_id === user.id);
+      return {
+        id: user.id,
+        organizationId: ctx.organizationId,
+        email: user.email,
+        name: user.name,
+        role: orgUser?.role || 'member',
+        createdAt: user.created_at,
+      };
+    });
   });
