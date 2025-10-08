@@ -13,14 +13,14 @@ import {
   Platform,
 } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
-import { Plus, X, DollarSign, Calendar } from 'lucide-react-native';
+import { Plus, X, DollarSign, Calendar, ChevronDown } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
 
 I18nManager.allowRTL(true);
 I18nManager.forceRTL(true);
 
-type DateFilter = 'all' | 'today' | 'week' | 'month' | 'year';
+type DateFilter = 'all' | 'month' | 'year' | string;
 
 export default function CourierDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -33,6 +33,32 @@ export default function CourierDetailScreen() {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+
+  const generateMonthOptions = () => {
+    const options: { value: DateFilter; label: string }[] = [
+      { value: 'all', label: 'הכל' },
+      { value: 'month', label: 'חודש נוכחי' },
+      { value: 'year', label: 'שנה' },
+    ];
+
+    const currentYear = new Date().getFullYear();
+    const startYear = 2020;
+
+    for (let year = currentYear; year >= startYear; year--) {
+      const startMonth = year === currentYear ? new Date().getMonth() : 11;
+      for (let month = startMonth; month >= 0; month--) {
+        const monthDate = new Date(year, month, 1);
+        const monthName = monthDate.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' });
+        const monthValue = `${year}-${String(month + 1).padStart(2, '0')}`;
+        options.push({ value: monthValue, label: monthName });
+      }
+    }
+
+    return options;
+  };
+
+  const filterOptions = React.useMemo(() => generateMonthOptions(), []);
 
   const courier = couriers.find((c) => c.id === id);
   const courierDeliveries = deliveries.filter((d) => d.courierId === id);
@@ -108,23 +134,25 @@ export default function CourierDetailScreen() {
     return d.toLocaleDateString('he-IL');
   };
 
+  const getFilterLabel = () => {
+    const option = filterOptions.find(opt => opt.value === dateFilter);
+    return option?.label || 'הכל';
+  };
+
   const filterByDate = (itemDate: string) => {
     const date = new Date(itemDate);
     const now = new Date();
     
-    switch (dateFilter) {
-      case 'today':
-        return date.toDateString() === now.toDateString();
-      case 'week':
-        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        return date >= weekAgo;
-      case 'month':
-        return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-      case 'year':
-        return date.getFullYear() === now.getFullYear();
-      default:
-        return true;
+    if (dateFilter === 'all') return true;
+    if (dateFilter === 'year') {
+      return date.getFullYear() === now.getFullYear();
     }
+    if (dateFilter === 'month') {
+      return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+    }
+    
+    const [year, month] = dateFilter.split('-').map(Number);
+    return date.getFullYear() === year && date.getMonth() === month - 1;
   };
 
   const sortedDeliveries = [...courierDeliveries]
@@ -145,38 +173,14 @@ export default function CourierDetailScreen() {
       />
       <View style={styles.container}>
         <ScrollView contentContainerStyle={styles.content}>
-          <View style={styles.filterContainer}>
+          <TouchableOpacity 
+            style={styles.filterContainer}
+            onPress={() => setFilterModalVisible(true)}
+          >
             <Calendar size={20} color="#6B7280" />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
-              <View style={styles.filterButtons}>
-                {[
-                  { value: 'all' as DateFilter, label: 'הכל' },
-                  { value: 'today' as DateFilter, label: 'היום' },
-                  { value: 'week' as DateFilter, label: 'שבוע' },
-                  { value: 'month' as DateFilter, label: 'חודש' },
-                  { value: 'year' as DateFilter, label: 'שנה' },
-                ].map((option) => (
-                  <TouchableOpacity
-                    key={option.value}
-                    style={[
-                      styles.filterButton,
-                      dateFilter === option.value && styles.filterButtonActive,
-                    ]}
-                    onPress={() => setDateFilter(option.value)}
-                  >
-                    <Text
-                      style={[
-                        styles.filterButtonText,
-                        dateFilter === option.value && styles.filterButtonTextActive,
-                      ]}
-                    >
-                      {option.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
-          </View>
+            <Text style={styles.filterLabel}>{getFilterLabel()}</Text>
+            <ChevronDown size={20} color="#6B7280" />
+          </TouchableOpacity>
 
           <View style={styles.balanceCard}>
             <Text style={styles.balanceLabel}>מאזן נוכחי</Text>
@@ -412,6 +416,53 @@ export default function CourierDetailScreen() {
           </TouchableOpacity>
           </KeyboardAvoidingView>
         </Modal>
+
+        <Modal
+          visible={filterModalVisible}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setFilterModalVisible(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setFilterModalVisible(false)}
+          >
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={(e) => e.stopPropagation()}
+              style={styles.filterModalContent}
+            >
+              <View style={styles.filterModalHeader}>
+                <Text style={styles.filterModalTitle}>בחר תקופה</Text>
+              </View>
+              <ScrollView style={styles.filterModalScroll}>
+                {filterOptions.map((option) => (
+                  <TouchableOpacity
+                    key={option.value}
+                    style={[
+                      styles.filterModalOption,
+                      dateFilter === option.value && styles.filterModalOptionActive,
+                    ]}
+                    onPress={() => {
+                      setDateFilter(option.value);
+                      setFilterModalVisible(false);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.filterModalOptionText,
+                        dateFilter === option.value && styles.filterModalOptionTextActive,
+                      ]}
+                    >
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </Modal>
       </View>
     </>
   );
@@ -625,28 +676,48 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  filterScroll: {
+  filterLabel: {
     flex: 1,
-  },
-  filterButtons: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  filterButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: '#F3F4F6',
-  },
-  filterButtonActive: {
-    backgroundColor: '#8B5CF6',
-  },
-  filterButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600' as const,
-    color: '#6B7280',
+    color: '#1F2937',
+    textAlign: 'right',
   },
-  filterButtonTextActive: {
-    color: '#FFFFFF',
+  filterModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '70%',
+  },
+  filterModalHeader: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  filterModalTitle: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: '#1F2937',
+    textAlign: 'center',
+  },
+  filterModalScroll: {
+    maxHeight: 400,
+  },
+  filterModalOption: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  filterModalOptionActive: {
+    backgroundColor: '#EDE9FE',
+  },
+  filterModalOptionText: {
+    fontSize: 16,
+    color: '#4B5563',
+    textAlign: 'right',
+  },
+  filterModalOptionTextActive: {
+    color: '#8B5CF6',
+    fontWeight: '600' as const,
   },
 });

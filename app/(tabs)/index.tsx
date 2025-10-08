@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, I18nManager, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, I18nManager, TouchableOpacity, Modal } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { TrendingUp, TrendingDown, DollarSign, Users, Calendar } from 'lucide-react-native';
+import { TrendingUp, TrendingDown, DollarSign, Users, Calendar, ChevronDown } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
 
@@ -35,6 +35,7 @@ export default function DashboardScreen() {
   const { user } = useAuth();
   const { incomes, expenses, couriers } = useData();
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
 
   const filterByDate = (date: string) => {
     const itemDate = new Date(date);
@@ -102,6 +103,11 @@ export default function DashboardScreen() {
 
   const filterOptions = useMemo(() => generateMonthOptions(), []);
 
+  const getFilterLabel = () => {
+    const option = filterOptions.find(opt => opt.value === dateFilter);
+    return option?.label || 'הכל';
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
@@ -109,32 +115,14 @@ export default function DashboardScreen() {
         <Text style={styles.subtitle}>סקירה כללית של העסק</Text>
       </View>
 
-      <View style={styles.filterContainer}>
+      <TouchableOpacity 
+        style={styles.filterContainer}
+        onPress={() => setFilterModalVisible(true)}
+      >
         <Calendar size={20} color="#6B7280" />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
-          <View style={styles.filterButtons}>
-            {filterOptions.map((option) => (
-              <TouchableOpacity
-                key={option.value}
-                style={[
-                  styles.filterButton,
-                  dateFilter === option.value && styles.filterButtonActive,
-                ]}
-                onPress={() => setDateFilter(option.value)}
-              >
-                <Text
-                  style={[
-                    styles.filterButtonText,
-                    dateFilter === option.value && styles.filterButtonTextActive,
-                  ]}
-                >
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
-      </View>
+        <Text style={styles.filterLabel}>{getFilterLabel()}</Text>
+        <ChevronDown size={20} color="#6B7280" />
+      </TouchableOpacity>
 
       <View style={styles.grid}>
         <StatCard
@@ -178,6 +166,53 @@ export default function DashboardScreen() {
           <Text style={styles.activityText}>שליחים: {couriers.length} רשומים</Text>
         </View>
       </View>
+
+      <Modal
+        visible={filterModalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setFilterModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setFilterModalVisible(false)}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+            style={styles.filterModalContent}
+          >
+            <View style={styles.filterModalHeader}>
+              <Text style={styles.filterModalTitle}>בחר תקופה</Text>
+            </View>
+            <ScrollView style={styles.filterModalScroll}>
+              {filterOptions.map((option) => (
+                <TouchableOpacity
+                  key={option.value}
+                  style={[
+                    styles.filterModalOption,
+                    dateFilter === option.value && styles.filterModalOptionActive,
+                  ]}
+                  onPress={() => {
+                    setDateFilter(option.value);
+                    setFilterModalVisible(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.filterModalOptionText,
+                      dateFilter === option.value && styles.filterModalOptionTextActive,
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </ScrollView>
   );
 }
@@ -289,28 +324,53 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  filterScroll: {
+  filterLabel: {
     flex: 1,
-  },
-  filterButtons: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  filterButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: '#F3F4F6',
-  },
-  filterButtonActive: {
-    backgroundColor: '#2563EB',
-  },
-  filterButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600' as const,
-    color: '#6B7280',
+    color: '#1F2937',
+    textAlign: 'right',
   },
-  filterButtonTextActive: {
-    color: '#FFFFFF',
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  filterModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '70%',
+  },
+  filterModalHeader: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  filterModalTitle: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: '#1F2937',
+    textAlign: 'center',
+  },
+  filterModalScroll: {
+    maxHeight: 400,
+  },
+  filterModalOption: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  filterModalOptionActive: {
+    backgroundColor: '#EFF6FF',
+  },
+  filterModalOptionText: {
+    fontSize: 16,
+    color: '#4B5563',
+    textAlign: 'right',
+  },
+  filterModalOptionTextActive: {
+    color: '#2563EB',
+    fontWeight: '600' as const,
   },
 });

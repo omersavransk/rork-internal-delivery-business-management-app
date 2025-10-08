@@ -12,7 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { Plus, Edit2, Trash2, X, Calendar } from 'lucide-react-native';
+import { Plus, Edit2, Trash2, X, Calendar, ChevronDown } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
 import type { Expense } from '@/types/database';
@@ -31,6 +31,7 @@ export default function ExpensesScreen() {
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
 
   const handleSave = async () => {
     if (!amount || !description) {
@@ -143,6 +144,11 @@ export default function ExpensesScreen() {
 
   const filterOptions = React.useMemo(() => generateMonthOptions(), []);
 
+  const getFilterLabel = () => {
+    const option = filterOptions.find(opt => opt.value === dateFilter);
+    return option?.label || 'הכל';
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -156,32 +162,14 @@ export default function ExpensesScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.filterContainer}>
+        <TouchableOpacity 
+          style={styles.filterContainer}
+          onPress={() => setFilterModalVisible(true)}
+        >
           <Calendar size={20} color="#6B7280" />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
-            <View style={styles.filterButtons}>
-              {filterOptions.map((option) => (
-                <TouchableOpacity
-                  key={option.value}
-                  style={[
-                    styles.filterButton,
-                    dateFilter === option.value && styles.filterButtonActive,
-                  ]}
-                  onPress={() => setDateFilter(option.value)}
-                >
-                  <Text
-                    style={[
-                      styles.filterButtonText,
-                      dateFilter === option.value && styles.filterButtonTextActive,
-                    ]}
-                  >
-                    {option.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
-        </View>
+          <Text style={styles.filterLabel}>{getFilterLabel()}</Text>
+          <ChevronDown size={20} color="#6B7280" />
+        </TouchableOpacity>
 
         {sortedExpenses.length === 0 ? (
           <View style={styles.emptyState}>
@@ -297,6 +285,53 @@ export default function ExpensesScreen() {
             </TouchableOpacity>
           </TouchableOpacity>
         </KeyboardAvoidingView>
+      </Modal>
+
+      <Modal
+        visible={filterModalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setFilterModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setFilterModalVisible(false)}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+            style={styles.filterModalContent}
+          >
+            <View style={styles.filterModalHeader}>
+              <Text style={styles.filterModalTitle}>בחר תקופה</Text>
+            </View>
+            <ScrollView style={styles.filterModalScroll}>
+              {filterOptions.map((option) => (
+                <TouchableOpacity
+                  key={option.value}
+                  style={[
+                    styles.filterModalOption,
+                    dateFilter === option.value && styles.filterModalOptionActive,
+                  ]}
+                  onPress={() => {
+                    setDateFilter(option.value);
+                    setFilterModalVisible(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.filterModalOptionText,
+                      dateFilter === option.value && styles.filterModalOptionTextActive,
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
     </View>
   );
@@ -470,28 +505,48 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  filterScroll: {
+  filterLabel: {
     flex: 1,
-  },
-  filterButtons: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  filterButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: '#F3F4F6',
-  },
-  filterButtonActive: {
-    backgroundColor: '#EF4444',
-  },
-  filterButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600' as const,
-    color: '#6B7280',
+    color: '#1F2937',
+    textAlign: 'right',
   },
-  filterButtonTextActive: {
-    color: '#FFFFFF',
+  filterModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '70%',
+  },
+  filterModalHeader: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  filterModalTitle: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: '#1F2937',
+    textAlign: 'center',
+  },
+  filterModalScroll: {
+    maxHeight: 400,
+  },
+  filterModalOption: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  filterModalOptionActive: {
+    backgroundColor: '#FEE2E2',
+  },
+  filterModalOptionText: {
+    fontSize: 16,
+    color: '#4B5563',
+    textAlign: 'right',
+  },
+  filterModalOptionTextActive: {
+    color: '#EF4444',
+    fontWeight: '600' as const,
   },
 });
