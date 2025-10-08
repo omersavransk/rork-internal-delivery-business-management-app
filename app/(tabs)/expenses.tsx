@@ -118,19 +118,30 @@ export default function ExpensesScreen() {
     .filter(item => filterByDate(item.date))
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  const filterOptions: { value: DateFilter; label: string }[] = [
-    { value: 'all', label: 'הכל' },
-    { value: 'month', label: 'חודש נוכחי' },
-    { value: 'year', label: 'שנה' },
-  ];
+  const generateMonthOptions = () => {
+    const options: { value: DateFilter; label: string }[] = [
+      { value: 'all', label: 'הכל' },
+      { value: 'month', label: 'חודש נוכחי' },
+      { value: 'year', label: 'שנה' },
+    ];
 
-  const now = new Date();
-  for (let i = 1; i <= 12; i++) {
-    const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const monthName = monthDate.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' });
-    const monthValue = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
-    filterOptions.push({ value: monthValue, label: monthName });
-  }
+    const currentYear = new Date().getFullYear();
+    const startYear = 2020;
+
+    for (let year = currentYear; year >= startYear; year--) {
+      const startMonth = year === currentYear ? new Date().getMonth() : 11;
+      for (let month = startMonth; month >= 0; month--) {
+        const monthDate = new Date(year, month, 1);
+        const monthName = monthDate.toLocaleDateString('he-IL', { month: 'long', year: 'numeric' });
+        const monthValue = `${year}-${String(month + 1).padStart(2, '0')}`;
+        options.push({ value: monthValue, label: monthName });
+      }
+    }
+
+    return options;
+  };
+
+  const filterOptions = React.useMemo(() => generateMonthOptions(), []);
 
   return (
     <View style={styles.container}>
